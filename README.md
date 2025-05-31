@@ -1,122 +1,114 @@
-# Bookmark Podcast Summarizer
+# Bookmark Podcast Generator
 
-A Chrome extension that automatically collects your bookmarks, generates AI-powered summaries, and creates audio podcasts of your weekly reading material.
+A Chrome extension that transforms your bookmarks into engaging podcast-style summaries using AI and text-to-speech technology.
 
 ## Features
 
-- **Automatic Bookmark Collection**: Seamlessly collects and organizes your bookmarks
-- **AI-Powered Summaries**: Uses Hugging Face's AI models to generate concise summaries
-- **Weekly Podcast Generation**: Converts summaries into audio podcasts using gTTS
-- **Email Delivery**: Sends weekly summaries and podcasts directly to your email
-- **Customizable Settings**: Configure your email and preferences through the extension options
-
-## Tech Stack
-
-### Frontend (Chrome Extension)
-- **HTML/CSS/JavaScript**: Core extension interface
-- **Chrome Extension APIs**: For bookmark management and background tasks
-- **Bootstrap**: For responsive and modern UI design
-
-### Backend (Node.js Server)
-- **Express.js**: Web server framework
-- **Hugging Face Inference API**: For AI-powered text summarization
-- **gTTS (Google Text-to-Speech)**: For generating audio podcasts
-- **Brevo (formerly Sendinblue)**: For email delivery
-- **Cheerio**: For web scraping and content extraction
-- **Axios**: For HTTP requests
+- **Bookmark Summarization**: Automatically generates concise summaries of your bookmarked web pages
+- **AI-Powered Content**: Utilizes Google's Generative AI to create engaging content
+- **Text-to-Speech**: Converts summaries into natural-sounding audio using ElevenLabs
+- **Email Integration**: Option to receive summaries via email
+- **Customizable Settings**: Adjust voice, language, and other preferences through the extension options
 
 ## Project Structure
 
 ```
-bookmark-podcast-summarizer/
-├── extension/                 # Chrome extension files
-│   ├── manifest.json         # Extension configuration
-│   ├── popup.html           # Extension popup interface
-│   ├── popup.js             # Popup functionality
-│   ├── background.js        # Background tasks
-│   ├── options.html         # Settings page
-│   └── options.js           # Settings functionality
-├── backend/                  # Node.js server
-│   ├── server.js            # Main server file
-│   ├── package.json         # Dependencies
-│   └── .env                 # Environment variables
-└── README.md                # Project documentation
+bookmark-podcast-extension/
+├── backend/               # Node.js backend server
+│   ├── server.js         # Main server file
+│   ├── emailservice.js   # Email service integration
+│   └── utils/            # Utility functions
+├── extension/            # Chrome extension files
+│   ├── manifest.json     # Extension configuration
+│   ├── popup.html        # Extension popup interface
+│   ├── popup.js          # Popup functionality
+│   ├── background.js     # Background processes
+│   ├── options.html      # Settings page
+│   ├── options.js        # Settings functionality
+│   └── icons/            # Extension icons
+└── package.json          # Project dependencies
 ```
 
-## Setup Instructions
+## Prerequisites
 
-### Backend Setup
+- Node.js (v14 or higher)
+- Chrome browser
+- API keys for:
+  - Google Generative AI
+  - ElevenLabs
+  - Email service (optional)
 
-1. Navigate to the backend directory:
+## Installation
+
+1. Clone the repository:
    ```bash
-   cd backend
+   git clone [repository-url]
+   cd bookmark-podcast-extension
    ```
 
 2. Install dependencies:
    ```bash
    npm install
+   cd backend
+   npm install
    ```
 
-3. Create a `.env` file with the following variables:
+3. Set up environment variables:
+   Create a `.env` file in the backend directory with the following variables:
    ```
-   BREVO_API_KEY=your_brevo_api_key
-   EMAIL_FROM=your_sender_email
-   PORT=3000
-   ```
-
-4. Start the server:
-   ```bash
-   npm start
+   GOOGLE_API_KEY=your_google_api_key
+   ELEVENLABS_API_KEY=your_elevenlabs_api_key
+   EMAIL_SERVICE_KEY=your_email_service_key
    ```
 
-### Chrome Extension Setup
+4. Load the extension in Chrome:
+   - Open Chrome and navigate to `chrome://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked"
+   - Select the `extension` directory
 
-1. Open Chrome and go to `chrome://extensions/`
-2. Enable "Developer mode" in the top right
-3. Click "Load unpacked" and select the `extension` directory
-4. Click the extension icon and configure your email in the options
+## Usage
 
-## How It Works
+1. Click the extension icon in your Chrome toolbar
+2. Navigate to a webpage you want to bookmark
+3. Click the bookmark icon in the extension popup
+4. Wait for the summary to be generated
+5. Listen to the podcast-style summary or read the text version
+6. Optionally, send the summary to your email
 
-1. **Bookmark Collection**:
-   - The extension monitors and collects your bookmarks
-   - Bookmarks are stored locally in Chrome's storage
+## Configuration
 
-2. **Weekly Processing**:
-   - Every week, the extension sends bookmarks to the backend
-   - The backend extracts content from each bookmark
-   - AI generates concise summaries of the content
+Access the extension settings by:
+1. Right-clicking the extension icon
+2. Selecting "Options"
+3. Configure your preferences for:
+   - Voice selection
+   - Language
+   - Email settings
+   - Summary length
 
-3. **Podcast Generation**:
-   - Summaries are converted to speech using gTTS
-   - Audio is generated in MP3 format
-   - Podcast is attached to the weekly email
+## Development
 
-4. **Email Delivery**:
-   - Weekly summary and podcast are sent via Brevo
-   - Email includes both text summary and audio player
-   - MP3 file is attached for offline listening
+To start the backend server:
+```bash
+npm start
+```
 
-## Environment Variables
-
-- `BREVO_API_KEY`: Your Brevo API key for email sending
-- `EMAIL_FROM`: The email address to send summaries from
-- `PORT`: The port number for the backend server (default: 3000)
+The server will run on `http://localhost:3000` by default.
 
 ## Dependencies
 
 ### Backend
-- express: Web server framework
-- sib-api-v3-sdk: Brevo email API client
-- cheerio: HTML parsing and content extraction
-- axios: HTTP client
-- @huggingface/inference: AI model integration
-- node-gtts: Text-to-speech conversion
-- dotenv: Environment variable management
+- Express.js - Web server framework
+- Google Generative AI - AI text generation
+- ElevenLabs - Text-to-speech conversion
+- Nodemailer - Email functionality
+- Cheerio - Web scraping
+- Axios - HTTP client
 
-### Frontend
-- Bootstrap: UI framework
+### Extension
 - Chrome Extension APIs
+- Google Generative AI SDK
 
 ## Contributing
 
@@ -130,8 +122,6 @@ bookmark-podcast-summarizer/
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Acknowledgments
+## Support
 
-- Hugging Face for AI models
-- Google for text-to-speech technology
-- Brevo for email delivery services 
+For support, please open an issue in the repository or contact the development team. 

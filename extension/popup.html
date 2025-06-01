@@ -1,63 +1,140 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
   <title>Bookmark Podcast Summarizer</title>
   <style>
     body {
-      width: 300px;
+      width: fit-content;
       padding: 15px;
-      font-family: Arial, sans-serif;
+      background-color: rgb(0, 0, 0);
+      font-family: 'Mulish', sans-serif;
+      margin: 0;
     }
     .container {
+      position: relative;
       text-align: center;
-    }
-    h1 {
-      font-size: 18px;
-      margin-bottom: 15px;
-    }
-    .status {
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 4px;
-      display: none;
-    }
-    .success {
-      background-color: #dff0d8;
-      color: #3c763d;
-    }
-    .error {
-      background-color: #f2dede;
-      color: #a94442;
-    }
-    button {
-      background-color: #4CAF50;
+      background-color: black;
+      padding: 20px 15px 10px; /* Reduced bottom padding */
       color: white;
-      padding: 8px 16px;
+      border-radius: 10px;
+      width: 350px;
+      box-sizing: border-box;
+    }
+
+    .head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px; /* Space between heading and buttons */
+    }
+
+    h1 {
+      font-size: 30px;
+      margin: 10px 0 0 0;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px; /* Space between buttons and alert */
+      height: 70px;
+    }
+
+    button {
+      background-color: #000000;
+      color: white;
+      padding: 14px 10px;
       border: none;
-      border-radius: 4px;
+      border-radius: 10px;
+      transition: 0.15s;
+      font-size: 14px;
       cursor: pointer;
       margin: 5px;
+      width: 150px;
+      height: 60px;
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
     }
+
     button:hover {
-      background-color: #45a049;
+      background-color: #141414;
     }
+
     .settings-link {
       display: block;
       margin-top: 10px;
       color: #666;
       text-decoration: none;
     }
+
     .settings-link:hover {
       text-decoration: underline;
+    }
+
+    .status {
+      position: absolute;
+      bottom: 1px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(30, 30, 30, 0.9);
+      color: white;
+      padding: 8px 15px;
+      border-radius: 10px;
+      font-size: 13px;
+      max-width: 320px;
+      width: auto;
+      min-width: 180px;
+      text-align: center;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      display: block;
+      visibility: hidden;
+      z-index: 9999;
+    }
+
+    .status.show {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      user-select: text;
+    }
+
+    .status-spacer {
+      height: 0;
+      transition: height 0.3s ease;
+    }
+
+    .status-spacer.visible {
+      height: 30px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Bookmark Podcast Summarizer</h1>
+    <div class="head">
+      <img src="icons/pod.png" width="50" height="50" alt="">
+      <h1>AI PodCaster!</h1>
+    </div>
+    <div class="buttons">
+      <button id="sendNow">
+        <img src="icons/thunder-bolt.png" width="30" height="30" alt="">
+        <span>Lightning Summary</span>
+      </button>
+      <button id="openSettings">
+        <img src="icons/settings.png" width="30" height="30" alt="">
+        <span>Open Settings</span>
+      </button>
+    </div>
+    <div class="status-spacer" id="statusSpacer"></div>
     <div id="status" class="status"></div>
-    <button id="sendNow">Send Summary Now</button>
-    <button id="openSettings">Open Settings</button>
   </div>
   <script src="popup.js"></script>
 </body>

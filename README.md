@@ -1,13 +1,14 @@
 # Bookmark Podcast Generator
 
-A Chrome extension that transforms your bookmarks into engaging podcast-style summaries using AI and text-to-speech technology.
+A Chrome extension that transforms your bookmarks into engaging podcast-style summaries using AI and text-to-speech technology. Get weekly automated summaries of your bookmarks or generate instant summaries on demand.
 
 ## Features
 
-- **Bookmark Summarization**: Automatically generates concise summaries of your bookmarked web pages
+- **Automatic Weekly Summaries**: Receive a weekly email with summaries of bookmarks added in the last 7 days
+- **Instant Summaries**: Click "Send Now" to get immediate summaries of all your bookmarks
 - **AI-Powered Content**: Utilizes Google's Generative AI to create engaging content
 - **Text-to-Speech**: Converts summaries into natural-sounding audio using ElevenLabs
-- **Email Integration**: Option to receive summaries via email
+- **Email Integration**: Receive summaries directly in your inbox
 - **Customizable Settings**: Adjust voice, language, and other preferences through the extension options
 
 ## Project Structure
@@ -69,12 +70,29 @@ bookmark-podcast-extension/
 
 ## Usage
 
+### Initial Setup
 1. Click the extension icon in your Chrome toolbar
-2. Navigate to a webpage you want to bookmark
-3. Click the bookmark icon in the extension popup
-4. Wait for the summary to be generated
-5. Listen to the podcast-style summary or read the text version
-6. Optionally, send the summary to your email
+2. Click "Settings" to configure your email address
+3. Save your settings
+
+### Getting Summaries
+You have two ways to receive summaries:
+
+1. **Automatic Weekly Summaries**:
+   - The extension automatically sends summaries every 7 days
+   - Only includes bookmarks added in the last 7 days
+   - You'll receive an email with:
+     - Text summaries of each bookmark
+     - A podcast-style audio summary
+     - Links to the original content
+
+2. **Instant "Send Now" Summaries**:
+   - Click the extension icon
+   - Click "Send Now"
+   - Receive an immediate email with:
+     - Summaries of ALL your bookmarks
+     - A combined podcast of all content
+     - Links to the original content
 
 ## Configuration
 
@@ -82,9 +100,9 @@ Access the extension settings by:
 1. Right-clicking the extension icon
 2. Selecting "Options"
 3. Configure your preferences for:
+   - Email address
    - Voice selection
    - Language
-   - Email settings
    - Summary length
 
 ## Development

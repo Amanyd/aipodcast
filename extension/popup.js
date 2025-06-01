@@ -1,29 +1,25 @@
-// Handle "Send Summary Now" button click
 document.getElementById('sendNow').addEventListener('click', async () => {
   const status = document.getElementById('status');
-  
+
   try {
-    // Get email from storage
     const { userEmail } = await chrome.storage.sync.get('userEmail');
-    
+
     if (!userEmail) {
       showStatus('Please configure your email in settings first', 'error');
       return;
     }
 
-    // Get all bookmarks
     const bookmarkTreeNodes = await chrome.bookmarks.getTree();
-    const urls = extractUrls(bookmarkTreeNodes);
+    const bookmarks = extractUrls(bookmarkTreeNodes);
 
-    if (urls.length === 0) {
+    if (bookmarks.length === 0) {
       showStatus('No bookmarks found to summarize', 'error');
       return;
     }
 
-    // Send message to background script to trigger summary
-    chrome.runtime.sendMessage({ 
+    chrome.runtime.sendMessage({
       action: 'sendSummary',
-      urls: urls,
+      bookmarks: bookmarks,
       email: userEmail
     }, (response) => {
       if (response.success) {
@@ -37,25 +33,24 @@ document.getElementById('sendNow').addEventListener('click', async () => {
   }
 });
 
-// Handle "Open Settings" button click
 document.getElementById('openSettings').addEventListener('click', () => {
   chrome.runtime.openOptionsPage();
 });
 
-// Helper function to show status messages
 function showStatus(message, type) {
   const status = document.getElementById('status');
+  const spacer = document.getElementById('statusSpacer');
+
   status.textContent = message;
-  status.className = 'status ' + type;
-  status.style.display = 'block';
-  
-  // Hide status after 3 seconds
+  status.className = 'status ' + type + ' show';
+  spacer.classList.add('visible');
+
   setTimeout(() => {
-    status.style.display = 'none';
+    status.classList.remove('show');
+    spacer.classList.remove('visible');
   }, 3000);
 }
 
-// Check if email is configured when popup opens
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     const { userEmail } = await chrome.storage.sync.get('userEmail');
@@ -67,13 +62,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Helper function to extract URLs from bookmark tree
-function extractUrls(nodes, urls = []) {
+function extractUrls(nodes, bookmarks = []) {
   for (let node of nodes) {
     if (node.url && (node.url.startsWith('http://') || node.url.startsWith('https://'))) {
-      urls.push(node.url);
+      bookmarks.push({
+        url: node.url,
+        title: node.title || 'Untitled',
+        dateAdded: node.dateAdded || Date.now()
+      });
     }
-    if (node.children) extractUrls(node.children, urls);
+    if (node.children) extractUrls(node.children, bookmarks);
   }
-  return urls;
+  return bookmarks;
 }

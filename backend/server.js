@@ -324,6 +324,7 @@ async function generatePodcastAudio(conversation) {
 async function generateSummaryAndPodcast(bookmarks) {
   let summary = '<h2>Your Bookmarked Content Summary</h2>';
   let podcastText = 'Welcome to your weekly bookmark summary podcast. I\'ve gathered some interesting content for you today. ';
+  let allConversations = [];
   
   for (const bookmark of bookmarks) {
     if (!bookmark.url || !bookmark.url.startsWith('http')) continue;
@@ -340,8 +341,8 @@ async function generateSummaryAndPodcast(bookmarks) {
       });
       
       const $ = cheerio.load(response.data);
-      const title = $('title').text() || bookmark.title || 'Untitled';
-      console.log(`Extracted title: ${title}`);
+      const title = bookmark.title || $('title').text() || 'Untitled';
+      console.log(`Processing: ${title}`);
       
       let mainContent = '';
       const contentSelectors = [
@@ -375,16 +376,16 @@ async function generateSummaryAndPodcast(bookmarks) {
         throw new Error('Not enough content extracted');
       }
 
-      let summarizedContent = '';
       try {
         console.log('Generating summary with Gemini...');
-        summarizedContent = await generateSummary(mainContent.substring(0, 2000));
-        console.log('Generated summary:', summarizedContent);
+        const summarizedContent = await generateSummary(mainContent.substring(0, 2000));
+        console.log('Generated summary for:', title);
 
         // Generate conversational script for podcast
         console.log('Generating conversational script...');
         const conversation = await generateConversationalScript(mainContent.substring(0, 2000), title);
-        console.log('Generated conversation script');
+        allConversations.push(conversation);
+        console.log('Generated conversation script for:', title);
 
         // Add to email summary
         summary += `
@@ -396,16 +397,17 @@ async function generateSummaryAndPodcast(bookmarks) {
             <small style="color: #7f8c8d;">Bookmarked on: ${new Date(bookmark.dateAdded).toLocaleDateString()}</small>
           </div>
         `;
-
-        // Generate podcast audio from conversation
-        const tempAudioPath = await generatePodcastAudio(conversation);
-        const audioBuffer = fs.readFileSync(tempAudioPath);
-        await unlinkAsync(tempAudioPath);
-
-        return { summary, audioBuffer, audioContentId: 'podcast-audio' };
       } catch (error) {
-        console.error('Error generating content:', error);
-        throw error;
+        console.error('Error generating content for:', title, error);
+        summary += `
+          <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+            <h3 style="margin-top: 0; color: #2c3e50;">
+              <a href="${bookmark.url}" style="color: #3498db; text-decoration: none;">${title}</a>
+            </h3>
+            <p style="color: #e74c3c;">Unable to generate summary: ${error.message}</p>
+            <small style="color: #7f8c8d;">Bookmarked on: ${new Date(bookmark.dateAdded).toLocaleDateString()}</small>
+          </div>
+        `;
       }
     } catch (error) {
       console.error('Error processing bookmark:', error.message);
@@ -414,17 +416,30 @@ async function generateSummaryAndPodcast(bookmarks) {
           <h3 style="margin-top: 0; color: #2c3e50;">
             <a href="${bookmark.url}" style="color: #3498db; text-decoration: none;">${bookmark.title || 'Untitled'}</a>
           </h3>
-          <p style="color: #e74c3c;">Unable to fetch content for this bookmark: ${error.message}</p>
+          <p style="color: #e74c3c;">Unable to fetch content: ${error.message}</p>
           <small style="color: #7f8c8d;">Bookmarked on: ${new Date(bookmark.dateAdded).toLocaleDateString()}</small>
         </div>
       `;
     }
   }
 
-  return { summary };
+  // Generate podcast audio from all conversations
+  let audioBuffer = null;
+  if (allConversations.length > 0) {
+    try {
+      const combinedConversation = allConversations.join('\n\n');
+      const tempAudioPath = await generatePodcastAudio(combinedConversation);
+      audioBuffer = fs.readFileSync(tempAudioPath);
+      await unlinkAsync(tempAudioPath);
+    } catch (error) {
+      console.error('Error generating podcast audio:', error);
+    }
+  }
+
+  return { summary, audioBuffer, audioContentId: 'podcast-audio' };
 }
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);

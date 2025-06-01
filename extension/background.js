@@ -17,10 +17,29 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // Handle messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'sendSummary') {
-    sendImmediateSummary(request.urls, request.email)
-      .then(() => sendResponse({ success: true }))
-      .catch(error => sendResponse({ success: false, error: error.message }));
-    return true; // Keep the message channel open for async response
+    const { bookmarks, email } = request;
+    
+    // For Send Now, send all bookmarks without filtering
+    fetch('http://localhost:3000/api/summary', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email,
+        bookmarks: bookmarks // Send all bookmarks
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      sendResponse(data);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      sendResponse({ success: false, error: error.message });
+    });
+
+    return true; // Required for async sendResponse
   }
 });
 

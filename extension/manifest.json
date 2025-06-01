@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Bookmark Podcast Summarizer",
+  "name": "AI PodCaster!",
   "version": "1.0",
   "description": "Weekly bookmark summaries with podcast generation",
   "permissions": [
     "bookmarks",
     "storage",
+    "notifications",
     "alarms",
     "identity"
   ],

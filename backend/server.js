@@ -458,7 +458,7 @@ const PORT = process.env.PORT || 3001;
 const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);
-  console.log('Test the server at: http://localhost:3000/test');
+  console.log('Test the server at: http://localhost:3001/test');
 });
 
 

@@ -20,14 +20,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const { bookmarks, email } = request;
     
     // For Send Now, send all bookmarks without filtering
-    fetch('http://localhost:3000/api/summary', {
+    fetchWithRetry('https://podbackend-d9cg.onrender.com/api/summary', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         email: email,
-        bookmarks: bookmarks // Send all bookmarks
+        bookmarks: bookmarks
       })
     })
     .then(response => response.json())
@@ -67,6 +67,25 @@ async function fetchBookmarks() {
   return flattenedBookmarks;
 }
 
+// Function to fetch with retry
+async function fetchWithRetry(url, options, maxRetries = 3, delay = 2000) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.status === 503) {
+        console.log(`Server is spinning up, attempt ${i + 1} of ${maxRetries}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      return response;
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      console.log(`Request failed, attempt ${i + 1} of ${maxRetries}`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 // Function to send immediate summary
 async function sendImmediateSummary(urls, email) {
   try {
@@ -80,7 +99,7 @@ async function sendImmediateSummary(urls, email) {
       bookmarkCount: bookmarks.length
     });
 
-    const response = await fetch('http://localhost:3000/api/summary', {
+    const response = await fetchWithRetry('https://podbackend-d9cg.onrender.com/api/summary', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -131,7 +150,7 @@ async function sendWeeklySummary() {
     });
 
     // Send to backend
-    const response = await fetch('http://localhost:3000/api/summary', {
+    const response = await fetchWithRetry('https://podbackend-d9cg.onrender.com/api/summary', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

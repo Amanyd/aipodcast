@@ -49,8 +49,8 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Allow your Render.com domain (you'll add this URL after deployment)
-    if (origin === 'https://your-app-name.onrender.com') {
+    // Allow your Render.com domain
+    if (origin === 'https://podbackend-d9cg.onrender.com') {
       return callback(null, true);
     }
     

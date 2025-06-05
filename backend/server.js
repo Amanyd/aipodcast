@@ -39,12 +39,27 @@ const app = express();
 app.use(bodyParser.json());
 
 // Enable CORS for all routes
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-ID');
-  next();
-});
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, etc)
+    if (!origin) return callback(null, true);
+    
+    // Allow Chrome extension requests
+    if (origin.startsWith('chrome-extension://')) {
+      return callback(null, true);
+    }
+    
+    // Allow your Render.com domain (you'll add this URL after deployment)
+    if (origin === 'https://your-app-name.onrender.com') {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-User-ID'],
+  credentials: true
+}));
 
 // Configure Brevo API
 const defaultClient = SibApiV3Sdk.ApiClient.instance;

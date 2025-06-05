@@ -12,7 +12,7 @@ const writeFileAsync = promisify(fs.writeFile);
 const unlinkAsync = promisify(fs.unlink);
 const nodemailer = require('nodemailer');
 const { ElevenLabsClient } = require("@elevenlabs/elevenlabs-js");
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Add retry logic for axios
 const axiosWithRetry = async (url, options, maxRetries = 3) => {
@@ -27,11 +27,46 @@ const axiosWithRetry = async (url, options, maxRetries = 3) => {
   }
 };
 
+// Add Gemini API retry logic
+const geminiWithRetry = async (prompt, maxRetries = 3) => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt
+                }
+              ]
+            }
+          ]
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          timeout: 30000 // 30 second timeout
+        }
+      );
+
+      if (response.data && response.data.candidates && response.data.candidates[0]) {
+        return response.data.candidates[0].content.parts[0].text.trim();
+      } else {
+        throw new Error('Invalid response format from Gemini API');
+      }
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      console.log(`Retry ${i + 1}/${maxRetries} for Gemini API`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+    }
+  }
+};
+
 // Initialize Gemini
-const genAI = new GoogleGenAI({ 
-  apiKey: process.env.GEMINI_API_KEY,
-  vertexai: false // Using direct API access
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Initialize ElevenLabs client with better error handling
 if (!process.env.ELEVENLABS_API_KEY) {
@@ -97,7 +132,24 @@ const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
 // Add a test endpoint
 app.get('/test', (req, res) => {
-  res.json({ status: 'Server is running!' });
+  res.json({ 
+    status: 'Server is running!',
+    timestamp: new Date().toISOString(),
+    environment: {
+      elevenlabs: process.env.ELEVENLABS_API_KEY ? 'Configured' : 'Not configured',
+      gemini: process.env.GEMINI_API_KEY ? 'Configured' : 'Not configured',
+      brevo: process.env.BREVO_API_KEY ? 'Configured' : 'Not configured',
+      email: process.env.EMAIL_FROM ? 'Configured' : 'Not configured'
+    }
+  });
+});
+
+// Add a health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.post('/api/summary', async (req, res) => {
@@ -184,35 +236,15 @@ async function generateSummary(content) {
     Content to summarize:
     ${content}`;
 
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt
-              }
-            ]
-          }
-        ]
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    if (response.data && response.data.candidates && response.data.candidates[0]) {
-      const summary = response.data.candidates[0].content.parts[0].text.trim();
-      console.log('Summary generated successfully');
-      return summary;
-    } else {
-      throw new Error('Invalid response format from Gemini API');
-    }
+    const summary = await geminiWithRetry(prompt);
+    console.log('Summary generated successfully');
+    return summary;
   } catch (error) {
-    console.error('Error generating summary:', error);
+    console.error('Error generating summary:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
     throw error;
   }
 }
@@ -229,33 +261,14 @@ async function generateConversationalScript(text, title) {
     Topic: ${title}
     Content to discuss: ${text}`;
 
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt
-              }
-            ]
-          }
-        ]
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    if (response.data && response.data.candidates && response.data.candidates[0]) {
-      return response.data.candidates[0].content.parts[0].text.trim();
-    } else {
-      throw new Error('Invalid response format from Gemini API');
-    }
+    const conversation = await geminiWithRetry(prompt);
+    return conversation;
   } catch (error) {
-    console.error('Error generating conversational script:', error);
+    console.error('Error generating conversational script:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
     throw error;
   }
 }
@@ -326,11 +339,11 @@ async function generateSpeech(text, isAlex = true) {
 }
 
 async function generatePodcastAudio(conversation) {
+  let tempAudioPath = null;
   try {
     console.log('Starting podcast audio generation...');
     console.log('Conversation script:', conversation);
     
-    // Split the conversation into Alex and Sarah's parts
     const lines = conversation.split('\n');
     console.log('Number of conversation lines:', lines.length);
     
@@ -348,7 +361,6 @@ async function generatePodcastAudio(conversation) {
           console.log('Speech generated successfully for this line');
         } catch (speechError) {
           console.error('Error generating speech for line:', speechError);
-          // Continue with other lines even if one fails
           continue;
         }
       }
@@ -359,14 +371,21 @@ async function generatePodcastAudio(conversation) {
     }
 
     console.log('Combining audio buffers...');
-    // Combine all audio buffers
     const combinedAudio = Buffer.concat(audioBuffers);
-    const tempAudioPath = path.join(__dirname, 'temp-podcast.mp3');
+    tempAudioPath = path.join(__dirname, 'temp-podcast.mp3');
     await writeFileAsync(tempAudioPath, combinedAudio);
     console.log('Podcast audio file generated successfully');
     return tempAudioPath;
   } catch (error) {
     console.error('Error in generatePodcastAudio:', error);
+    // Clean up temp file if it exists
+    if (tempAudioPath && fs.existsSync(tempAudioPath)) {
+      try {
+        await unlinkAsync(tempAudioPath);
+      } catch (cleanupError) {
+        console.error('Error cleaning up temp file:', cleanupError);
+      }
+    }
     throw error;
   }
 }

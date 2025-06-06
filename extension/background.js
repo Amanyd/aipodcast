@@ -20,7 +20,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const { bookmarks, email } = request;
     
     // For Send Now, send all bookmarks without filtering
-    fetchWithRetry('https://podbackend-d9cg.onrender.com/api/summary', {
+    fetchWithRetry('http://localhost:3001/api/summary', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -30,9 +30,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         bookmarks: bookmarks
       })
     })
-    .then(response => response.json())
-    .then(data => {
-      sendResponse(data);
+    .then(response => {
+      if (!response) {
+        throw new Error('No response received from server');
+      }
+      return response.json().then(data => {
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to send summary');
+        }
+        sendResponse({ success: true, message: data.message });
+      });
     })
     .catch(error => {
       console.error('Error:', error);
@@ -71,7 +78,11 @@ async function fetchBookmarks() {
 async function fetchWithRetry(url, options, maxRetries = 3, delay = 2000) {
   for (let i = 0; i < maxRetries; i++) {
     try {
+      console.log(`Attempting request to ${url}, attempt ${i + 1} of ${maxRetries}`);
       const response = await fetch(url, options);
+      if (!response) {
+        throw new Error('No response received');
+      }
       if (response.status === 503) {
         console.log(`Server is spinning up, attempt ${i + 1} of ${maxRetries}`);
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -79,8 +90,9 @@ async function fetchWithRetry(url, options, maxRetries = 3, delay = 2000) {
       }
       return response;
     } catch (error) {
+      console.error(`Request failed on attempt ${i + 1}:`, error);
       if (i === maxRetries - 1) throw error;
-      console.log(`Request failed, attempt ${i + 1} of ${maxRetries}`);
+      console.log(`Retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }

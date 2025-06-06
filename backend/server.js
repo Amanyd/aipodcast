@@ -104,11 +104,17 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Allow localhost requests
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
+    }
+    
     // Allow your Render.com domain
     if (origin === 'https://podbackend-d9cg.onrender.com') {
       return callback(null, true);
     }
     
+    console.log('CORS blocked request from origin:', origin);
     callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -504,6 +510,16 @@ async function generateSummaryAndPodcast(bookmarks) {
 
   return { summary, audioBuffer, audioContentId: 'podcast-audio' };
 }
+
+// Add error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({ 
+    success: false, 
+    error: err.message || 'Internal server error',
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
 
 const PORT = process.env.PORT || 3001;
 const HOST = '0.0.0.0';
